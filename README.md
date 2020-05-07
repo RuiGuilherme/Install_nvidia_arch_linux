@@ -47,25 +47,13 @@ Primeiro passo é instalar as dependências básicas do sistema, tanto da Intel 
 
 Créditos: [Instalação Arch, por Felipe Facundes](https://github.com/felipefacundes/desktop/tree/master/Arch_linux_Install#preparar-para-jogos-todas-%C3%A0s-depend%C3%AAncias-necess%C3%A1rias-inclusive-para-aumentar-consideravelmente-a-performance-em-jogos)
 
+##### Observações: 
+- Irei usar a [SDDM](https://wiki.archlinux.org/index.php/SDDM) como DM
+- Irei usar o [KDE Plasma Xorg](https://wiki.archlinux.org/index.php/KDE) como DE
+- Irei usar o driver dkms
+- GeFoce GT 820M é uma placa Fermi, então só tem suporte no driver legacy 390xx, pode ser consultado aqui: [Link](https://www.nvidia.com/en-us/drivers/unix/legacy-gpu/)
+- Irei usar o [optimus-manager](https://aur.archlinux.org/packages/optimus-manager/) para controlar e alternar entre os gráficos. 
 #### Configurando o sistema para receber o driver (Não se esqueça de salvar)
-
-`sudo nano /etc/modprobe.d/nvidia.conf`
-
-```bash
-blacklist nouveau
-blacklist nvidiafb
-blacklist rivafb
-```
-
-================================
-
-`sudo nano /etc/modprobe.d/nvidia-drm.conf`
-
-```bash
-options nvidia_drm modeset=1
-```
-
-================================
 
 `sudo nano /usr/local/bin/optimus.sh`
 
@@ -76,28 +64,6 @@ xrandr --setprovideroutputsource modesetting NVIDIA-0
 xrandr --auto
 ```
 `sudo chmod a+rx /usr/local/bin/optimus.sh`
-
-================================
-
-`sudo nano /usr/local/share/optimus.desktop`
-
-
-```bash
-[Desktop Entry]
-Type=Application
-Name=Optimus
-Exec=sh -c "xrandr --setprovideroutputsource modesetting NVIDIA-0; xrandr --auto"
-NoDisplay=true
-X-GNOME-Autostart-Phase=DisplayServer
-```
-
-================================
-
-`sudo ln -s /usr/local/share/optimus.desktop /usr/share/gdm/greeter/autostart/optimus.desktop`
-
-Talvez esse primeiro ln dê algum problema, mas não vai atrapalhar nos proximos passos.
-
-`sudo ln -s /usr/local/share/optimus.desktop /etc/xdg/autostart/optimus.desktop`
 
 ================================
 
@@ -125,14 +91,14 @@ EndSection
 Section "Device"
     Identifier "nvidia"
     Driver "nvidia"
-    BusID "PCI:1:0:0"
+    #BusID "PCI:1:0:0"
     Option "AllowEmptyInitialConfiguration"
 EndSection
 ```
 
 ##### Observação
 
-A linha de BusID é opcional, porém você tem que alterar o "1" para o ID da sua GPU, no meu caso eu apenas deletei essa linha(Já que o BusID é opciona), caso queria saber qual é o Bus de seu equipamento entre com o seguinte comando `lspci -k | grep -A 2 -E "(VGA|3D)"` e altere de acordo com a saída o arquivo `/optimus.conf`
+A linha de BusID é opcional, porém você tem que alterar o "1" para o ID da sua GPU, no meu caso eu apenas deletei essa linha(Já que o BusID é opciona), caso queria saber qual é o Bus de seu equipamento entre com o seguinte comando `lspci -k | grep -A 2 -E "(VGA|3D)"` e altere de acordo com a saída o arquivo `/etc/X11/xorg.conf.d/optimus.conf`
 
 ================================
 
@@ -140,13 +106,7 @@ A linha de BusID é opcional, porém você tem que alterar o "1" para o ID da su
 
 Verifique a saída dos arquivos e veja se tudo foi salvo corretamente.
 
-`cat /etc/modprobe.d/nvidia.conf`
-
-`cat /etc/modprobe.d/nvidia-drm.conf`
-
 `cat /usr/local/bin/optimus.sh`
-
-`cat /usr/local/share/optimus.desktop`
 
 `cat /usr/share/sddm/scripts/Xsetup`
 
@@ -157,29 +117,20 @@ Verifique a saída dos arquivos e veja se tudo foi salvo corretamente.
 #### Observações
 O bbswitch-dkms, optimus-manager-qt ou o optimus-manager-qt-git provavelmente não iram funcionar, mas você pode tentar. ;) 
 
-No caso vamos usar o **optimus-manager**
+Como já foi dito, vamos usar o **optimus-manager**
 
-`yay -S optimus-manager`
+`yay -S nvidia-390xx-dkms nvidia-390xx-settings opencl-nvidia-390xx lib32-nvidia-390xx-utils lib32-opencl-nvidia-390xx nvidia-390xx-utils optimus-manager`
 
-Logo após instalar, tente mudar para a nvidia executando o seguinte comando
+`reboot`
+
+Quando a maquina voltar 
 
 `optimus-manager --switch nvidia`
+ou
+`optimus-manager --switch hybrid`
+[Mais detalhes](https://github.com/Askannz/optimus-manager)
 
-E por final(caso ele não faça logout): `reboot`
-
-Caso esteja usando o SwayWM o sistema não vai aplicar e nem fazer logout(Sway não suporta driver fechado). Nesta situação será preciso usar o i3wm ou alguma DE(KDE, Gnome...).
-
-Outra observação é que você precisa de uma DM(gdm, sddm, lightdm...) para poder iniciar o driver(Infelizmente usando o sx o driver da nvidia não inicia de forma alguma, sendo necesario uma DM - No caso eu usei o ssdm).
-
-Após o sistema voltar e entrar em sua DE você pode checar qual driver está rodando executando o comando `glxinfo -B`.
-
-Caso ainda não esteja funcionando é muito provavel que você esteja rodando uma versão do driver não suportada pela sua placa de vídeo (Como foi o meu caso), a GTX 820M só é suportada pela versão 430(No aguardo da 440 hehe) e n tem suporte para versão 435.
-
-Entre com o seguinte comando `pacman -Ss nvidia` e caso a saída de informações desse comando seja os drivers 430, 435 ou o beta(440) é provavel que o seu o problema seja a versão do driver, neste caso eu recomendo usar a versão 390xx executando o seguinte comando: `sudo pacman -S nvidia-390xx-dkms  nvidia-390xx-settings opencl-nvidia-390xx lib32-nvidia-390xx-utils lib32-opencl-nvidia-390xx nvidia-390xx-utils`
-
-Caso você tenha algum problema com dependência e conflitos, remova os pacotes conflitantes usando o `-Rdd`
-
-E logo em seguida execute o comando `optimus-manager --switch nvidia`(é normal ele fazer logout), faça login na sua DE e em seguida execute o comando `glxinfo -B` para checar qual driver está rodando.
+Ele vai fazer logout, para checar qual driver está rodando basta executar `glxinfo -B`
 
 ##### A saída deve ser algo assim:
 
@@ -208,8 +159,3 @@ OpenGL profile mask: (none)
 OpenGL ES profile version string: OpenGL ES 3.2 NVIDIA 390.129
 OpenGL ES profile shading language version string: OpenGL ES GLSL ES 3.20
 ```
-
-
-
-## Créditos
-[felipefacundes](https://github.com/felipefacundes) - Salvador no Telegram. 
