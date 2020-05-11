@@ -38,7 +38,7 @@ Primeiro passo é instalar as dependências básicas do sistema, tanto da Intel 
 
 ### Nvidia
 
-> pacman -Syy nvidia-dkms linux-headers dkms nvidia-settings lib32-libvdpau lib32-libglvnd libglvnd libvdpau nvidia-utils opencl-nvidia xsettingsd xsettings-client ffnvcodec-headers libxnvctrl xf86-video-nouveau lib32-nvidia-utils lib32-opencl-nvidia nccl nvidia-cg-toolkit
+> pacman -Syy linux-headers dkms lib32-libvdpau lib32-libglvnd libglvnd libvdpau xsettingsd xsettings-client ffnvcodec-headers libxnvctrl xf86-video-nouveau nccl nvidia-cg-toolkit
 
 
 ### Intel
@@ -53,71 +53,8 @@ Créditos: [Instalação Arch, por Felipe Facundes](https://github.com/felipefac
 - Irei usar o driver dkms
 - GeFoce GT 820M é uma placa Fermi, então só tem suporte no driver legacy 390xx, pode ser consultado aqui: [Link](https://www.nvidia.com/en-us/drivers/unix/legacy-gpu/)
 - Irei usar o [optimus-manager](https://aur.archlinux.org/packages/optimus-manager/) para controlar e alternar entre os gráficos. 
-#### Configurando o sistema para receber o driver (Não se esqueça de salvar)
 
-`sudo nano /usr/local/bin/optimus.sh`
-
-```bash
-#!/bin/sh
-
-xrandr --setprovideroutputsource modesetting NVIDIA-0
-xrandr --auto
-```
-`sudo chmod a+rx /usr/local/bin/optimus.sh`
-
-================================
-
-`sudo nano /usr/share/sddm/scripts/Xsetup`
-
-```bash
-#!/bin/sh
-
-xrandr --setprovideroutputsource modesetting NVIDIA-0
-xrandr --auto
-```
-
-`sudo chmod +x /usr/share/sddm/scripts/Xsetup`
-
-================================
-
-`sudo nano /etc/X11/xorg.conf.d/optimus.conf`
-
-
-```bash
-Section "Module"
-    Load "modesetting"
-EndSection
-
-Section "Device"
-    Identifier "nvidia"
-    Driver "nvidia"
-    #BusID "PCI:1:0:0"
-    Option "AllowEmptyInitialConfiguration"
-EndSection
-```
-
-##### Observação
-
-A linha de BusID é opcional, porém você tem que alterar o "1" para o ID da sua GPU, no meu caso eu apenas deletei essa linha(Já que o BusID é opciona), caso queria saber qual é o Bus de seu equipamento entre com o seguinte comando `lspci -k | grep -A 2 -E "(VGA|3D)"` e altere de acordo com a saída o arquivo `/etc/X11/xorg.conf.d/optimus.conf`
-
-================================
-
-### Vamos checar se está tudo ok.
-
-Verifique a saída dos arquivos e veja se tudo foi salvo corretamente.
-
-`cat /usr/local/bin/optimus.sh`
-
-`cat /usr/share/sddm/scripts/Xsetup`
-
-`cat /etc/X11/xorg.conf.d/optimus.conf`
-
-## Iniciando os serviços
-
-#### Observações
-O bbswitch-dkms, optimus-manager-qt ou o optimus-manager-qt-git provavelmente não iram funcionar, mas você pode tentar. ;) 
-
-Como já foi dito, vamos usar o **optimus-manager**
+#### Vamos instalar o driver e o controlador:
 
 `yay -S nvidia-390xx-dkms nvidia-390xx-settings opencl-nvidia-390xx lib32-nvidia-390xx-utils lib32-opencl-nvidia-390xx nvidia-390xx-utils optimus-manager`
 
